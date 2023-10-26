@@ -79,3 +79,5 @@ app.delete("/note/:id", async (req, res) => {
 app.listen(1010, () => {
   console.log("server start");
 });
+
+export default app;
