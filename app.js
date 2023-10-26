@@ -80,7 +80,7 @@ app.patch("/note/:id", async (req, res) => {
 });
 app.delete("/note/:id", async (req, res) => {
   try {
-    const deletedNotes = await noteModel.remove({ _id: req.params.id });
+    const deletedNotes = await noteModel.deleteOne({ _id: req.params.id });
     res.json(deletedNotes);
   } catch (err) {
     console.log(err);
