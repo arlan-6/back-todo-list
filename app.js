@@ -17,7 +17,7 @@ mongoose
   });
 
 const app = express();
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = ["https://to-do-list-five-fawn-34.vercel.app/"];
 app.use(
   cors({
     origin: function (origin, callback) {
