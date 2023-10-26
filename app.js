@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 
 import noteModel from "./models/note.js";
+import cors from "cors";
 
 mongoose
   .connect(
@@ -16,7 +17,18 @@ mongoose
   });
 
 const app = express();
-
+const allowedOrigins = ["http://localhost:5173"];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
 app.use(express.json());
 
 app.post("/note", async (req, res) => {
