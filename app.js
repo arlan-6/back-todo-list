@@ -53,8 +53,8 @@ mongoose
 
 const app = express();
 const allowedOrigins = [
-  // "https://to-do-list-five-fawn-34.vercel.app",
-  "http://localhost:5173",
+  "https://to-do-list-five-fawn-34.vercel.app",
+  // "http://localhost:5173",
 ];
 app.use(
   cors({
