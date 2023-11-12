@@ -1,9 +1,44 @@
 import express from "express";
 import mongoose from "mongoose";
-
+import schedule from "node-schedule";
 import noteModel from "./models/note.js";
 import cors from "cors";
 
+const unCheck = async () => {
+  // const notes = await noteModel.find();
+  // const updated = notes.map((note) => {
+  //   const content = note.content.map((i) => {
+  //     i.checked = false;
+  //     // console.log(i.checked);
+  //     return i;
+  //   });
+  //   note.content = content
+  //   return note
+  // });
+  const filter = {
+    "content.unChecker": false,
+  };
+
+  // Define the update to set "unChecker" to true for selected documents
+  const update = {
+    $set: {
+      "content.$[element].checked": false,
+    },
+  };
+
+  // Define the arrayFilters option to specify the filter for the positional operator
+  const arrayFilters = [{ "element.unChecker": true }];
+  noteModel
+    .updateMany(filter, update, { arrayFilters })
+    .then((result) => {
+      console.log(result);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+};
+schedule.scheduleJob("0 0 * * *", unCheck);
+// unCheck();
 mongoose
   .connect(
     "mongodb+srv://arlanhan1997:1234@cluster0.zzfb7xu.mongodb.net/notes?retryWrites=true&w=majority",
@@ -17,7 +52,10 @@ mongoose
   });
 
 const app = express();
-const allowedOrigins = ["https://to-do-list-five-fawn-34.vercel.app"];
+const allowedOrigins = [
+  // "https://to-do-list-five-fawn-34.vercel.app",
+  "http://localhost:5173",
+];
 app.use(
   cors({
     origin: function (origin, callback) {
