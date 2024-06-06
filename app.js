@@ -4,40 +4,98 @@ import schedule from "node-schedule";
 import noteModel from "./models/note.js";
 import cors from "cors";
 
-const unCheck = async () => {
-  // const notes = await noteModel.find();
-  // const updated = notes.map((note) => {
-  //   const content = note.content.map((i) => {
-  //     i.checked = false;
-  //     // console.log(i.checked);
-  //     return i;
-  //   });
-  //   note.content = content
-  //   return note
-  // });
-  const filter = {
-    "content.unChecker": false,
+import { VertexAI } from "@google-cloud/vertexai";
+
+// Initialize Vertex with your Cloud project and location
+const vertex_ai = new VertexAI({
+  project: "superb-app-425312-p5",
+  location: "us-central1",
+});
+const model = "gemini-1.5-flash-001";
+
+// Instantiate the models
+const generativeModel = vertex_ai.preview.getGenerativeModel({
+  model: model,
+  generationConfig: {
+    maxOutputTokens: 7408,
+    temperature: 2,
+    topP: 0.95,
+  },
+  safetySettings: [
+    {
+      category: "HARM_CATEGORY_HATE_SPEECH",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+      category: "HARM_CATEGORY_HARASSMENT",
+      threshold: "BLOCK_MEDIUM_AND_ABOVE",
+    },
+  ],
+  systemInstruction: {
+    parts: [
+      {
+        type: "text",
+        content:
+          "Return a response in the format: { title: 'Title', description: 'Description', content: [{ type: 'text' or 'checkbox', text: 'text here', checked: false, unChecker: false }] }",
+      },
+    ],
+  },
+});
+
+async function generateContent() {
+  const req = {
+    contents: [
+      { role: "user", parts: [{ text: `write daily tasks for a student` }] },
+    ],
   };
 
-  // Define the update to set "unChecker" to true for selected documents
+  const streamingResp = await generativeModel.generateContentStream(req);
+
+  for await (const item of streamingResp.stream) {
+    process.stdout.write("stream chunk: " + JSON.stringify(item) + "\n");
+  }
+
+  process.stdout.write(
+    "aggregated response: " + JSON.stringify(await streamingResp.response)
+  );
+}
+
+// generateContent();
+
+const unCheck = async () => {
+  const filter = {
+    "content.unChecker": true, // Ensure this matches your requirement
+  };
+
   const update = {
     $set: {
       "content.$[element].checked": false,
     },
   };
 
-  // Define the arrayFilters option to specify the filter for the positional operator
   const arrayFilters = [{ "element.unChecker": true }];
-  noteModel
-    .updateMany(filter, update, { arrayFilters })
-    .then((result) => {
-      console.log(result);
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+
+  try {
+    const result = await noteModel.updateMany(filter, update, { arrayFilters });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
 };
-schedule.scheduleJob("0 0 * * *", unCheck);
+
+// Schedule the job to run every day at midnight
+schedule.scheduleJob("0 0 * * *", () => {
+  console.log("uncheck");
+  unCheck();
+});
 // unCheck();
 mongoose
   .connect(
@@ -53,8 +111,8 @@ mongoose
 
 const app = express();
 const allowedOrigins = [
-  "https://to-do-list-five-fawn-34.vercel.app",
-  // "http://localhost:5173",
+  // "https://to-do-list-five-fawn-34.vercel.app",
+  "http://localhost:5173",
 ];
 app.use(
   cors({
